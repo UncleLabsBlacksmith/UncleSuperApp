@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Gallery · Uncle Super App{% endblock %}
+{% block new_button %}
+<a href="{% url 'imagegen:index' %}" class="btn btn-primary btn-block new-chat">
+  <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>สร้างภาพชุดใหม่
+</a>
+{% endblock %}
+{% block main %}
+<header class="page-head">
+  <button class="icon-btn only-mobile" data-open-sidebar aria-label="เมนู"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+  <div><h1>Gallery</h1><p class="muted">ภาพทั้งหมดที่คุณสร้าง · {{ total }} ภาพ</p></div>
+</header>
+<div class="page-body">
+  <form class="gallery-tools" method="get">
+    <div class="search grow">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" name="q" value="{{ q }}" placeholder="ค้นหาจาก prompt…">
+    </div>
+    <select name="model" class="input select" onchange="this.form.submit()">
+      <option value="">ทุกโมเดล</option>
+      {% for m in models %}<option value="{{ m.generation__model }}" {% if m.generation__model == model %}selected{% endif %}>{{ m.generation__model }} ({{ m.n }})</option>{% endfor %}
+    </select>
+    <button class="btn btn-secondary">ค้นหา</button>
+    {% if q or model %}<a href="{% url 'imagegen:gallery' %}" class="btn btn-ghost">ล้าง</a>{% endif %}
+  </form>
+
+  {% if page.object_list %}
+  <div class="masonry" id="gallery">
+    {% for img in page.object_list %}{% include "imagegen/_image_tile.html" %}{% endfor %}
+  </div>
+  {% if page.has_other_pages %}
+  <nav class="pager">
+    {% if page.has_previous %}<a class="btn btn-ghost sm" href="?page={{ page.previous_page_number }}&q={{ q|urlencode }}&model={{ model|urlencode }}">← ก่อนหน้า</a>{% endif %}
+    <span class="muted small">หน้า {{ page.number }} / {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a class="btn btn-ghost sm" href="?page={{ page.next_page_number }}&q={{ q|urlencode }}&model={{ model|urlencode }}">ถัดไป →</a>{% endif %}
+  </nav>
+  {% endif %}
+  {% else %}
+  <div class="ig-empty">
+    <div class="ig-empty-art"><span></span><span></span><span></span></div>
+    <h2>{% if q or model %}ไม่พบภาพที่ค้นหา{% else %}ยังไม่มีภาพ{% endif %}</h2>
+    <p class="muted"><a href="{% url 'imagegen:index' %}">ไปที่ Image Generator</a> เพื่อเริ่มสร้างภาพแรก</p>
+  </div>
+  {% endif %}
+</div>
+{% include "imagegen/_lightbox.html" %}
+{% endblock %}
+{% block scripts %}
+<script>
+  window.IMG = {
+    page: "gallery",
+    indexUrl: "{% url 'imagegen:index' %}",
+    apiUrl: "{% url 'imagegen:index' %}api/",
+    csrf: "{{ csrf_token }}",
+  };
+</script>
+<script src="{% static 'js/images.js' %}"></script>
+{% endblock %}

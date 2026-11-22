@@ -1,0 +1,24 @@
+{% extends "accounts/_auth_layout.html" %}
+{% block title %}สมัครสมาชิก · Uncle Super App{% endblock %}
+{% block auth_content %}
+<h1 class="auth-h1">สร้างบัญชีใหม่</h1>
+<form method="post" class="form">
+  {% csrf_token %}
+  {% for e in form.non_field_errors %}<div class="alert alert-error">{{ e }}</div>{% endfor %}
+  {% with field=form.username %}{% include "accounts/_field.html" %}{% endwith %}
+  {% with field=form.email %}{% include "accounts/_field.html" %}{% endwith %}
+  <div class="row-2">
+    <div class="field{% if form.password1.errors %} has-error{% endif %}">
+      <label for="{{ form.password1.id_for_label }}">รหัสผ่าน</label>{{ form.password1 }}
+      {% for e in form.password1.errors %}<div class="error">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="field{% if form.password2.errors %} has-error{% endif %}">
+      <label for="{{ form.password2.id_for_label }}">ยืนยันรหัสผ่าน</label>{{ form.password2 }}
+      {% for e in form.password2.errors %}<div class="error">{{ e }}</div>{% endfor %}
+    </div>
+  </div>
+  <button class="btn btn-primary btn-block btn-lg">สมัครสมาชิก</button>
+  <p class="help center">บัญชีใหม่จะเป็นประเภท <span class="role-badge role-member">Member</span> (ใช้โมเดลฟรี) — ผู้ดูแลอัปเกรดเป็น Pro ได้</p>
+</form>
+<p class="auth-switch">มีบัญชีแล้ว? <a href="{% url 'accounts:login' %}">เข้าสู่ระบบ</a></p>
+{% endblock %}

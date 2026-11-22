@@ -1,0 +1,21 @@
+<div class="modal lightbox" id="lightbox" aria-hidden="true">
+  <div class="modal-backdrop" data-close-lightbox></div>
+  <div class="lb-panel" role="dialog">
+    <div class="lb-image"><img id="lbImg" alt=""></div>
+    <aside class="lb-info">
+      <div class="lb-top">
+        <span class="section-label" style="padding:0">รายละเอียดภาพ</span>
+        <button class="icon-btn" data-close-lightbox aria-label="ปิด"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <p class="lb-prompt" id="lbPrompt"></p>
+      <div class="lb-meta" id="lbMeta"></div>
+      <div class="lb-actions">
+        <a class="btn btn-primary" id="lbDownload"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>ดาวน์โหลด</a>
+        <button class="btn btn-secondary" id="lbRef">ใช้เป็นภาพอ้างอิง</button>
+        <button class="btn btn-secondary" id="lbPromptBtn">ใช้ prompt นี้</button>
+        <a class="btn btn-ghost" id="lbSession">เปิดประวัติของภาพนี้</a>
+        <button class="btn btn-ghost danger-text" id="lbDelete">ลบภาพ</button>
+      </div>
+    </aside>
+  </div>
+</div>

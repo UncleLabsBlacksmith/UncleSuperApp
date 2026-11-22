@@ -1,0 +1,12 @@
+<div class="section-label">งานวิดีโอ</div>
+<ul class="conv-list" id="vidList">
+  {% for p in projects %}
+  <li class="conv-item {% if project and p.pk == project.pk %}active{% endif %}" data-id="{{ p.pk }}">
+    <a href="{% url 'videogen:project' p.pk %}" class="conv-link" title="{{ p.title }}">
+      <span class="job-dot st-{{ p.status }}{% if not p.seen and not p.is_active %} unseen{% endif %}"></span>{{ p.title }}
+    </a>
+  </li>
+  {% empty %}
+  <li class="conv-empty">ยังไม่มีงานวิดีโอ</li>
+  {% endfor %}
+</ul>

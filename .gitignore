@@ -1,0 +1,59 @@
+# =====================================================================
+# Uncle Super App — ไฟล์ที่ไม่ต้องเอาขึ้น Git
+# =====================================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Virtual environment ---
+.venv/
+venv/
+env/
+
+# --- ข้อมูลและความลับ (ห้ามขึ้น Git เด็ดขาด) ---
+# ฐานข้อมูล: มีบัญชีผู้ใช้, ประวัติแชท และ API Key ที่เข้ารหัสไว้
+db.sqlite3
+db.sqlite3-journal
+db.sqlite3-wal
+db.sqlite3-shm
+*.sqlite3
+# กุญแจเข้ารหัส API Key ของผู้ใช้ทุกคน
+secret_key.txt
+.env
+.env.*
+# ไฟล์ที่ผู้ใช้อัปโหลด / ภาพ / วิดีโอที่สร้าง
+media/
+# ผลจาก collectstatic (สร้างใหม่ได้เสมอ)
+staticfiles/
+
+# --- ไฟล์ข้อมูลส่วนตัว (repo เป็น public) ---
+# ไฟล์ทดสอบ Data Analyst / RAG ที่วางไว้ในโฟลเดอร์โปรเจกต์
+ยอดขายเครื่องมือการเกษตร_2025.xlsx
+/*.xlsx
+/*.xls
+/*.csv
+/*.docx
+/*.pdf
+/*.pptx
+
+# --- ไฟล์ชั่วคราว ---
+_to_delete/
+*.log
+*.tmp
+*.bak
+
+# --- Editor / OS ---
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- เครื่องมือ AI ---
+.claude/settings.local.json

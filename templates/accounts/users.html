@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}จัดการผู้ใช้ · Uncle Super App{% endblock %}
+{% block main %}
+<header class="page-head">
+  <button class="icon-btn only-mobile" data-open-sidebar aria-label="เมนู"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+  <div><h1>จัดการผู้ใช้</h1><p class="muted">กำหนดประเภทผู้ใช้และเปิด/ปิดบัญชี</p></div>
+</header>
+<div class="page-body">
+  <div class="stat-row">
+    <div class="stat"><span class="stat-num">{{ users|length }}</span><span class="stat-label">ผู้ใช้ทั้งหมด</span></div>
+    {% for value, label in roles %}
+    <div class="stat"><span class="stat-num">{% for k, v in role_counts.items %}{% if k == value %}{{ v }}{% endif %}{% endfor %}</span><span class="stat-label"><span class="role-badge role-{{ value }}">{{ label }}</span></span></div>
+    {% endfor %}
+  </div>
+
+  <div class="card no-pad">
+    <table class="table">
+      <thead><tr><th>ผู้ใช้</th><th>ประเภท</th><th>แชท</th><th>สถานะ</th><th>เข้าใช้ล่าสุด</th><th></th></tr></thead>
+      <tbody>
+      {% for u in users %}
+        <tr class="{% if not u.is_active %}dim{% endif %}">
+          <td>
+            <div class="cell-user"><div class="avatar sm">{{ u.username|slice:":1"|upper }}</div>
+              <div><div class="strong">{{ u.username }}{% if u == user %} <span class="muted small">(คุณ)</span>{% endif %}</div><div class="muted small">{{ u.email|default:"—" }}</div></div>
+            </div>
+          </td>
+          <td>
+            {% if u == user or u.is_superuser and not user.is_superuser %}
+              <span class="role-badge role-{{ u.role }}">{{ u.get_role_display }}</span>
+            {% else %}
+            <form method="post" action="{% url 'accounts:user_update' u.pk %}" class="inline">
+              {% csrf_token %}
+              <select name="role" class="input select sm" onchange="this.form.submit()">
+                {% for value, label in roles %}<option value="{{ value }}" {% if u.role == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+              </select>
+            </form>
+            {% endif %}
+          </td>
+          <td>{{ u.conv_count }}</td>
+          <td>{% if u.is_active %}<span class="status status-ok"><i></i>ใช้งาน</span>{% else %}<span class="status status-off"><i></i>ปิดอยู่</span>{% endif %}</td>
+          <td class="muted small">{{ u.last_login|date:"j M Y H:i"|default:"—" }}</td>
+          <td class="right">
+            {% if u != user and not u.is_superuser or u != user and user.is_superuser %}
+            <form method="post" action="{% url 'accounts:user_update' u.pk %}" class="inline">
+              {% csrf_token %}
+              <button name="toggle_active" class="btn btn-ghost sm">{% if u.is_active %}ปิดบัญชี{% else %}เปิดบัญชี{% endif %}</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="muted small" style="margin-top:14px">สิทธิ์ของแต่ละประเภทปรับได้ใน <code>config/settings.py → ROLE_PERMISSIONS</code></p>
+</div>
+{% endblock %}

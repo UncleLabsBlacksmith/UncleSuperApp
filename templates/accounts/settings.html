@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}ตั้งค่า · Uncle Super App{% endblock %}
+{% block main %}
+<header class="page-head">
+  <button class="icon-btn only-mobile" data-open-sidebar aria-label="เมนู"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+  <div><h1>ตั้งค่า</h1><p class="muted">API Key, โมเดลเริ่มต้น และข้อมูลบัญชีของคุณ</p></div>
+</header>
+
+<div class="page-body">
+<form method="post" class="settings-grid" autocomplete="off">
+  {% csrf_token %}
+  <section class="card span-2">
+    <div class="card-head">
+      <div>
+        <h2>OpenRouter API Key</h2>
+        <p class="muted small">คีย์ถูกเข้ารหัสก่อนบันทึก และใช้เฉพาะบัญชีของคุณ · สร้างคีย์ได้ที่ <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a></p>
+      </div>
+      {% if app_settings.has_api_key %}
+        <span class="status status-ok"><i></i>บันทึกแล้ว</span>
+      {% else %}
+        <span class="status status-warn"><i></i>ยังไม่ได้ตั้งค่า</span>
+      {% endif %}
+    </div>
+    {% if app_settings.has_api_key %}
+      <div class="key-preview"><code>{{ app_settings.masked_api_key }}</code></div>
+    {% endif %}
+    {% with field=settings_form.api_key %}
+    <div class="field{% if field.errors %} has-error{% endif %}">
+      <label for="{{ field.id_for_label }}">{% if app_settings.has_api_key %}เปลี่ยน API Key{% else %}API Key{% endif %}</label>
+      <div class="input-group">
+        {{ field }}
+        <button type="button" class="btn btn-ghost" id="toggleKey" title="แสดง/ซ่อน">แสดง</button>
+        <button type="button" class="btn btn-secondary" id="testKey">ทดสอบคีย์</button>
+      </div>
+      {% if app_settings.has_api_key %}<div class="help">{{ field.help_text }}</div>{% endif %}
+      <div class="key-result" id="keyResult" hidden></div>
+    </div>
+    {% endwith %}
+    {% if app_settings.has_api_key %}
+    <label class="check"><input type="checkbox" name="clear_api_key" class="checkbox"> ลบ API Key ที่บันทึกไว้</label>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="card-head"><div><h2>การแชท</h2><p class="muted small">ค่าเริ่มต้นเมื่อเริ่มแชทใหม่</p></div></div>
+    {% with field=settings_form.default_model %}
+    <div class="field{% if field.errors %} has-error{% endif %}">
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      <div class="input-group">{{ field }}<button type="button" class="btn btn-secondary" id="openPicker">เลือก…</button></div>
+      {% for e in field.errors %}<div class="error">{{ e }}</div>{% endfor %}
+    </div>
+    {% endwith %}
+    {% with field=settings_form.temperature %}
+    <div class="field">
+      <label for="{{ field.id_for_label }}">Temperature <span class="muted small">(0 = แม่นยำ, 2 = สร้างสรรค์)</span></label>
+      {{ field }}
+      {% for e in field.errors %}<div class="error">{{ e }}</div>{% endfor %}
+    </div>
+    {% endwith %}
+    {% with field=settings_form.system_prompt %}{% include "accounts/_field.html" %}{% endwith %}
+  </section>
+
+  <section class="card">
+    <div class="card-head"><div><h2>บัญชี</h2><p class="muted small">@{{ user.username }} · สมัครเมื่อ {{ user.date_joined|date:"j M Y" }}</p></div>
+      <span class="role-badge role-{{ user.role }} lg">{{ user.get_role_display }}</span></div>
+    <ul class="perm-list">
+      <li class="{% if user.can_use_paid_models %}yes{% else %}no{% endif %}">โมเดลเสียเงิน</li>
+      <li class="yes">โมเดลฟรี</li>
+      <li class="{% if user.can_manage_users %}yes{% else %}no{% endif %}">จัดการผู้ใช้</li>
+      <li class="info">ข้อความวันนี้: <b>{{ used_today }}</b>{% if user.daily_message_limit %} / {{ user.daily_message_limit }}{% else %} (ไม่จำกัด){% endif %}</li>
+    </ul>
+    <div class="row-2">
+      {% with field=profile_form.first_name %}{% include "accounts/_field.html" %}{% endwith %}
+      {% with field=profile_form.last_name %}{% include "accounts/_field.html" %}{% endwith %}
+    </div>
+    {% with field=profile_form.email %}{% include "accounts/_field.html" %}{% endwith %}
+    <a href="{% url 'accounts:password_change' %}" class="link-btn">เปลี่ยนรหัสผ่าน →</a>
+  </section>
+
+  <div class="sticky-actions span-2">
+    <button class="btn btn-primary btn-lg">บันทึกการตั้งค่า</button>
+  </div>
+</form>
+</div>
+{% include "chat/_model_picker.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.APP = {
+    modelsUrl: "{% url 'chat:api_models' %}",
+    testKeyUrl: "{% url 'accounts:test_key' %}",
+    csrf: "{{ csrf_token }}",
+  };
+</script>
+<script src="{% static 'js/models.js' %}"></script>
+<script src="{% static 'js/settings.js' %}"></script>
+{% endblock %}

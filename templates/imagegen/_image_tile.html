@@ -1,0 +1,13 @@
+{% load imagegen_tags %}<figure class="img-tile" data-image-id="{{ img.pk }}"
+  data-full="{% url 'imagegen:file' 'out' img.pk %}"
+  data-download="{% url 'imagegen:file' 'out' img.pk %}?download=1"
+  data-prompt="{{ img.generation.prompt }}" data-model="{{ img.generation.model }}"
+  data-date="{{ img.created_at|date:'j M Y H:i' }}" data-params="{{ img.generation.params|tojson }}"
+  data-session="{% url 'imagegen:session' img.generation.session_id %}">
+  <img src="{% url 'imagegen:file' 'out' img.pk %}" loading="lazy" alt="{{ img.generation.prompt|truncatechars:80 }}">
+  <div class="tile-actions">
+    <button type="button" class="tile-btn" data-act="ref" title="ใช้เป็นภาพอ้างอิง"><svg viewBox="0 0 24 24"><path d="M15 3h6v6M10 14L21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></button>
+    <a class="tile-btn" href="{% url 'imagegen:file' 'out' img.pk %}?download=1" title="ดาวน์โหลด"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></a>
+    <button type="button" class="tile-btn danger" data-act="delete" title="ลบภาพ"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
+  </div>
+</figure>

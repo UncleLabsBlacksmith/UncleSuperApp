@@ -1,0 +1,14 @@
+{% extends "accounts/_auth_layout.html" %}
+{% block title %}เข้าสู่ระบบ · Uncle Super App{% endblock %}
+{% block auth_content %}
+<h1 class="auth-h1">เข้าสู่ระบบ</h1>
+<form method="post" class="form">
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-error">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</div>{% endif %}
+  {% with field=form.username %}{% include "accounts/_field.html" %}{% endwith %}
+  {% with field=form.password %}{% include "accounts/_field.html" %}{% endwith %}
+  <input type="hidden" name="next" value="{{ next }}">
+  <button class="btn btn-primary btn-block btn-lg">เข้าสู่ระบบ</button>
+</form>
+<p class="auth-switch">ยังไม่มีบัญชี? <a href="{% url 'accounts:register' %}">สมัครสมาชิก</a></p>
+{% endblock %}

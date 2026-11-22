@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Video Generator · Uncle Super App{% endblock %}
+{% block body_class %}video-page{% endblock %}
+
+{% block new_button %}
+<a href="{% url 'videogen:index' %}" class="btn btn-primary btn-block new-chat">
+  <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>สร้างวิดีโอใหม่
+</a>
+{% endblock %}
+
+{% block sidebar_extra %}{% include "videogen/_sidebar.html" %}{% endblock %}
+
+{% block main %}
+<header class="chat-top">
+  <button class="icon-btn only-mobile" data-open-sidebar aria-label="เมนู"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+  <div class="segmented mode-switch" id="vgMode">
+    <button type="button" data-mode="single" class="active"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="15" height="14" rx="2"/><path d="M17 10l5-3v10l-5-3z"/></svg>Single Video</button>
+    <button type="button" data-mode="series"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 4v16M17 4v16M2 9h5M2 15h5M17 9h5M17 15h5"/></svg>Series Video</button>
+  </div>
+  <div class="top-spacer"></div>
+  <span class="muted small only-desktop">สั่งแล้วปิดหน้าได้ — ระบบทำงานเบื้องหลังและแจ้งเมื่อเสร็จ</span>
+</header>
+
+{% if not has_api_key %}
+<div class="banner">
+  <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+  <span>ยังไม่ได้ตั้งค่า OpenRouter API Key — <a href="{% url 'accounts:settings' %}">ไปที่ตั้งค่า</a></span>
+</div>
+{% endif %}
+<div class="banner" id="roleBanner" hidden>
+  <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+  <span id="roleBannerText"></span>
+</div>
+
+<div class="vg-layout">
+  <!-- ===================== CONFIG ===================== -->
+  <aside class="ig-panel vg-config">
+    <div class="field">
+      <div class="label-row">
+        <label for="vgIdea">ไอเดีย / คำอธิบายวิดีโอ</label>
+        <div class="menu-wrap">
+          <button type="button" class="btn btn-ai xs" id="vgDescBtn" aria-haspopup="true">✨ ช่วยคิด <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+          <div class="dropdown" id="vgDescMenu" hidden>
+            <button type="button" data-desc="expand"><b>ขยายไอเดียให้ละเอียด</b><span>เติมตัวละคร ฉาก เรื่องราว อารมณ์ จากที่พิมพ์ไว้ (หรือคิดให้ใหม่ถ้ายังว่าง)</span></button>
+            <button type="button" data-desc="ideas"><b>เสนอไอเดีย 3 แบบ</b><span>ให้ AI คิดหลายแนว แล้วเลือกแบบที่ชอบ</span></button>
+            <button type="button" data-desc="caption"><b>เขียนคำอธิบายสำหรับโพสต์</b><span>ชื่อคลิป + description + แฮชแท็ก สำหรับ YouTube / TikTok</span></button>
+          </div>
+        </div>
+      </div>
+      <textarea id="vgIdea" class="input textarea" rows="4" placeholder="เช่น แมวส้มใส่ผ้ากันเปื้อนกำลังทำผัดกะเพราในครัวไทย ตลกน่ารัก"></textarea>
+      <div class="desc-status muted small" id="vgDescStatus" hidden></div>
+      <div class="idea-cards" id="vgIdeas"></div>
+    </div>
+
+    <div class="field">
+      <label>ประเภทวิดีโอ</label>
+      <div class="chip-select" id="vgType">
+        <button type="button" data-value="Product advertisement" class="active">โฆษณาสินค้า</button>
+        <button type="button" data-value="Short film">หนังสั้น</button>
+        <button type="button" data-value="Product demo / review">รีวิว/สาธิต</button>
+        <button type="button" data-value="Social media reel">Reels/TikTok</button>
+        <button type="button" data-value="Documentary">สารคดี</button>
+        <button type="button" data-value="Music video">มิวสิกวิดีโอ</button>
+        <button type="button" data-value="Kids cartoon">การ์ตูนเด็ก</button>
+        <button type="button" data-value="Explainer / educational">สอน/อธิบาย</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="vgStyle">สไตล์ภาพ</label>
+      <select id="vgStyle" class="input select">
+        <option value="cinematic, photorealistic, shallow depth of field, film grain">ภาพยนตร์ สมจริง (Cinematic)</option>
+        <option value="premium commercial studio lighting, ultra clean, glossy product shots">โฆษณาพรีเมียม สตูดิโอ</option>
+        <option value="stylized 3D animation, soft global illumination, expressive characters">3D Animation</option>
+        <option value="Japanese anime style, cel shading, vibrant colors">อนิเมะ</option>
+        <option value="claymation stop-motion, handmade textures">เคลย์ / สต็อปโมชั่น</option>
+        <option value="handheld documentary, natural light, authentic">สารคดี กล้องมือถือ</option>
+        <option value="watercolor illustration animated, soft paper texture">ภาพวาดสีน้ำ</option>
+        <option value="1980s retro film look, VHS color, nostalgic">ฟิล์มย้อนยุค 80s</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>โมเดลวิดีโอ</label>
+      <button class="model-btn wide" id="vgModelBtn" type="button">
+        <span class="model-dot"></span>
+        <span class="model-btn-text"><span class="model-name" id="vgModelName">กำลังโหลด…</span><span class="model-id" id="vgModelId">—</span></span>
+        <svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="model-caps" id="vgCaps"></div>
+    </div>
+
+    <div class="field"><label>สัดส่วนภาพ</label><div class="ratio-grid" id="vgAspect"></div></div>
+    <div class="field" id="vgResField"><label>ความละเอียด</label><div class="segmented wrap" id="vgRes"></div></div>
+
+    <div class="field" data-show="single">
+      <label>ความยาวคลิป (วินาที)</label>
+      <div class="segmented wrap" id="vgDuration"></div>
+    </div>
+    <div class="field" data-show="series">
+      <label>ความยาวต่อฉาก (วินาที)</label>
+      <div class="segmented wrap" id="vgSceneDur"></div>
+    </div>
+    <div class="field" data-show="series">
+      <label for="vgTotal">ความยาวรวมที่ต้องการ</label>
+      <div class="total-row">
+        <input type="number" id="vgTotal" class="input sm" min="5" max="600" value="60">
+        <span class="muted small">วินาที</span>
+        <div class="segmented" id="vgTotalPreset">
+          <button type="button" data-v="15">15</button><button type="button" data-v="30">30</button>
+          <button type="button" data-v="60" class="active">60</button><button type="button" data-v="90">90</button>
+        </div>
+      </div>
+      <div class="help" id="vgSceneCalc"></div>
+    </div>
+
+    <div class="field">
+      <label>เสียงในวิดีโอ</label>
+      <div class="segmented wrap" id="vgAudio">
+        <button type="button" data-value="silent">🔇 เงียบ</button>
+        <button type="button" data-value="ambient" class="active">🌿 เสียงบรรยากาศ</button>
+        <button type="button" data-value="voice">🗣 มีเสียงพูด</button>
+      </div>
+      <div class="help" id="vgAudioNote"></div>
+    </div>
+    <div class="field" id="vgLangField">
+      <label>ภาษาของเสียงพูด</label>
+      <div class="segmented" id="vgLang">
+        <button type="button" data-value="th" class="active">ไทย</button>
+        <button type="button" data-value="en">English</button>
+      </div>
+    </div>
+
+    <div class="field toggle-field" data-show="series" id="vgContField">
+      <label class="switch"><input type="checkbox" id="vgContinuity"><span></span></label>
+      <div><b>ฉากต่อเนื่องกัน</b><div class="help">ใช้เฟรมสุดท้ายของฉากก่อนเป็นเฟรมแรกของฉากถัดไป ภาพลื่นไหลกว่า แต่สร้างทีละฉาก (ช้ากว่า)</div></div>
+    </div>
+    <div class="field toggle-field" data-show="series">
+      <label class="switch"><input type="checkbox" id="vgMusic"><span></span></label>
+      <div><b>สร้างเพลงประกอบ (Background music)</b><div class="help">สร้างเพลงด้วย AI แล้วผสมเข้ากับวิดีโอตอนรวมคลิป</div></div>
+    </div>
+    <div class="music-opts" id="vgMusicOpts" data-show="series" hidden>
+      <div class="field"><label for="vgMusicModel">โมเดลเพลง</label><select id="vgMusicModel" class="input select sm"></select></div>
+      <div class="field"><label>ความดังเพลง</label>
+        <div class="range-row"><input type="range" id="vgMusicVol" min="5" max="100" value="25"><output id="vgMusicVolOut">25%</output></div>
+      </div>
+    </div>
+
+    <div class="field" id="vgFrameField">
+      <label>ภาพเริ่มต้น <span class="muted small">(ไม่บังคับ — ภาพสินค้า/ตัวละคร ใช้เป็นเฟรมแรก)</span></label>
+      <div class="dropzone sm" id="vgFrameDrop" tabindex="0">
+        <input type="file" id="vgFrameInput" accept="image/png,image/jpeg,image/webp" hidden>
+        <div id="vgFrameLabel"><b>เลือกภาพ</b> หรือลากมาวาง · PNG/JPG/WEBP</div>
+      </div>
+    </div>
+
+    <div class="field" id="vgSeedField">
+      <label for="vgSeed">Seed <span class="muted small">(ไม่บังคับ)</span></label>
+      <input type="number" id="vgSeed" class="input sm" placeholder="สุ่ม">
+    </div>
+  </aside>
+
+  <!-- ===================== PROMPT STUDIO ===================== -->
+  <section class="vg-studio">
+    <div class="studio-head">
+      <div>
+        <h2>Prompt Studio</h2>
+        <p class="muted small">ให้ AI ช่วยคิด prompt จากไอเดียและการตั้งค่าด้านซ้าย แล้วแก้ไขได้ก่อนกดสร้างจริง · AI ช่วยคิดด้วยโมเดล <code>{{ helper_model }}</code> (<a href="{% url 'accounts:settings' %}">เปลี่ยน</a>)</p>
+      </div>
+      <button type="button" class="btn btn-secondary btn-ai" id="vgAssist">
+        <svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.8L20 10l-5.1 3.6L16.5 20 12 16.4 7.5 20l1.6-6.4L4 10l6.1-1.2z"/></svg>ให้ AI ช่วยคิด Prompt
+      </button>
+    </div>
+
+    <div class="studio-body">
+      <div class="field"><label for="vgTitle">ชื่องาน</label><input id="vgTitle" class="input" placeholder="ตั้งชื่อให้จำง่าย (AI ตั้งให้ได้)"></div>
+      <div class="ai-tip" id="vgTip" hidden></div>
+
+      <div data-show="single">
+        <div class="field">
+          <label for="vgPrompt" class="label-inline">Prompt วิดีโอ <span class="muted small">(ภาษาอังกฤษจะได้ผลดีที่สุด)</span> {% include "videogen/_th_tip.html" with target="#vgPrompt" %}</label>
+          <textarea id="vgPrompt" class="input textarea" rows="7" placeholder="อธิบายภาพในคลิป: ตัวละคร การกระทำ ฉาก มุมกล้อง แสง อารมณ์"></textarea>
+        </div>
+        <div class="field" data-voice>
+          <label for="vgNarr">บทพูด / เสียงบรรยาย</label>
+          <input id="vgNarr" class="input" placeholder="ประโยคที่ต้องการให้พูดในคลิป">
+        </div>
+      </div>
+
+      <div data-show="series">
+        <div class="field">
+          <label for="vgStyleGuide" class="label-inline">Style guide <span class="muted small">(ใส่ไว้หน้าทุกฉาก เพื่อให้ภาพและตัวละครคงที่)</span> {% include "videogen/_th_tip.html" with target="#vgStyleGuide" %}</label>
+          <textarea id="vgStyleGuide" class="input textarea" rows="3" placeholder="เช่น Warm golden-hour palette. The hero is a ginger tabby cat wearing a red apron…"></textarea>
+        </div>
+        <div class="scenes-head">
+          <b>ฉาก (<span id="vgSceneCount">0</span>)</b>
+          <span class="muted small" id="vgSceneWarn"></span>
+          <button type="button" class="btn btn-ghost sm" id="vgAddScene">+ เพิ่มฉาก</button>
+        </div>
+        <div class="scene-list" id="vgScenes"></div>
+        <div class="field" id="vgMusicPromptField" hidden>
+          <label for="vgMusicPrompt">Prompt เพลงประกอบ</label>
+          <textarea id="vgMusicPrompt" class="input textarea" rows="2" placeholder="เช่น Upbeat playful acoustic ukulele and light percussion, 110 BPM, warm and fun"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="studio-foot">
+      <div class="estimate" id="vgEstimate"></div>
+      <button type="button" class="btn btn-primary btn-lg" id="vgGenerate" {% if not has_api_key %}disabled{% endif %}>
+        <svg viewBox="0 0 24 24"><rect x="2" y="5" width="15" height="14" rx="2"/><path d="M17 10l5-3v10l-5-3z"/></svg>สร้างวิดีโอ
+      </button>
+    </div>
+  </section>
+</div>
+
+{% include "videogen/_model_picker.html" %}
+{% include "videogen/_caption_modal.html" %}
+{% endblock %}
+
+{% block scripts %}
+{{ prefill|json_script:"vgPrefill" }}
+<script>
+  window.VG = {
+    page: "create",
+    modelsUrl: "{% url 'videogen:api_models' %}",
+    assistUrl: "{% url 'videogen:api_assist' %}",
+    assistSceneUrl: "{% url 'videogen:api_assist_scene' %}",
+    assistDescUrl: "{% url 'videogen:api_assist_description' %}",
+    translateUrl: "{% url 'videogen:api_translate' %}",
+    createUrl: "{% url 'videogen:api_create' %}",
+    maxScenes: {{ max_scenes }},
+    csrf: "{{ csrf_token }}",
+  };
+</script>
+<script src="{% static 'js/videos.js' %}"></script>
+{% endblock %}

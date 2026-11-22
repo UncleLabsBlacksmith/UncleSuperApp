@@ -1,0 +1,38 @@
+<div class="modal" id="modelModal" aria-hidden="true">
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="modal-panel" role="dialog" aria-labelledby="modelModalTitle">
+    <div class="modal-head">
+      <div>
+        <h2 id="modelModalTitle">เลือกโมเดล</h2>
+        <p class="muted small" id="modelCount">กำลังโหลด…</p>
+      </div>
+      <button class="icon-btn" data-close-modal aria-label="ปิด"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="picker-tools">
+      <div class="search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="modelSearch" placeholder="ค้นหาโมเดล เช่น claude, gpt, llama, gemini…" autocomplete="off">
+      </div>
+      <div class="picker-row">
+        <div class="segmented" id="priceFilter">
+          <button data-filter="all" class="active">ทั้งหมด</button>
+          <button data-filter="free">ฟรี</button>
+          <button data-filter="paid">เสียเงิน</button>
+        </div>
+        <select class="input select sm" id="modelSort">
+          <option value="popular">เรียง: ค่าเริ่มต้น</option>
+          <option value="price_asc">ราคา: ต่ำ → สูง</option>
+          <option value="price_desc">ราคา: สูง → ต่ำ</option>
+          <option value="newest">ใหม่ล่าสุด</option>
+          <option value="context">Context ยาวสุด</option>
+          <option value="name">ชื่อ A → Z</option>
+        </select>
+        <select class="input select sm" id="providerFilter">
+          <option value="">ทุกผู้ให้บริการ</option>
+        </select>
+      </div>
+    </div>
+    <div class="model-list-head"><span>โมเดล</span><span>Context</span><span>Input / Output <small>($/1M tokens)</small></span></div>
+    <div class="model-list" id="modelList"><div class="empty">กำลังโหลดรายชื่อโมเดล…</div></div>
+  </div>
+</div>

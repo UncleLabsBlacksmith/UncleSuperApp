@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{% if chat %}{{ chat.title }} · {% endif %}RAG เอกสาร · Uncle Super App{% endblock %}
+{% block body_class %}chat-page rag-page{% endblock %}
+
+{% block new_button %}
+<a href="{% url 'rag:index' %}" class="btn btn-primary btn-block new-chat"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>แชทเอกสารใหม่</a>
+{% endblock %}
+
+{% block sidebar_extra %}
+<div class="section-label">แชทเอกสาร (RAG)</div>
+<ul class="conv-list" id="chatList">
+  {% for c in chats %}
+  <li class="conv-item {% if chat and c.pk == chat.pk %}active{% endif %}" data-id="{{ c.pk }}">
+    <a href="{% url 'rag:chat' c.pk %}" class="conv-link" title="{{ c.title }}">{{ c.title }}</a>
+    <div class="conv-actions">
+      <button class="icon-btn xs" data-rename title="เปลี่ยนชื่อ"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+      <button class="icon-btn xs danger" data-delete title="ลบ"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
+    </div>
+  </li>
+  {% empty %}<li class="conv-empty">ยังไม่มีแชทเอกสาร</li>{% endfor %}
+</ul>
+{% endblock %}
+
+{% block main %}
+<header class="chat-top">
+  <button class="icon-btn only-mobile" data-open-sidebar aria-label="เมนู"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+  <button class="model-btn" id="modelBtn" title="โมเดลที่ใช้ตอบ">
+    <span class="model-dot"></span>
+    <span class="model-btn-text"><span class="model-name" id="modelName">{{ current_model }}</span><span class="model-id" id="modelId">{{ current_model }}</span></span>
+    <span class="model-tag" id="modelTag"></span>
+    <svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+  <div class="top-spacer"></div>
+  <button class="btn btn-ghost sm" id="settingsBtn" {% if not chat %}hidden{% endif %}><svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>ตั้งค่าการค้นหา</button>
+  <button class="btn btn-ghost sm only-mobile-inline" id="docsToggle">เอกสาร</button>
+</header>
+
+{% if not has_api_key %}
+<div class="banner"><svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+  <span>ยังไม่ได้ตั้งค่า OpenRouter API Key — <a href="{% url 'accounts:settings' %}">ไปที่ตั้งค่า</a></span></div>
+{% endif %}
+
+<div class="rag-layout">
+  <div class="rag-chat">
+    <section class="chat-scroll" id="chatScroll">
+      <div class="chat-inner" id="chatInner">
+        {% if not chat_messages %}
+        <div class="hero" id="hero">
+          <span class="logo-mark xl"><svg viewBox="0 0 32 32"><path d="M10 9v8a6 6 0 0 0 12 0V9" stroke="currentColor" stroke-width="3.2" fill="none" stroke-linecap="round"/></svg></span>
+          <h1>ถามจากเอกสารของคุณ</h1>
+          <p class="muted">{% if chat %}พิมพ์คำถามได้เลย — AI จะค้นหาในเอกสารของแชทนี้แล้วตอบพร้อมอ้างอิงแหล่งที่มา{% else %}เริ่มจากอัปโหลดเอกสาร (PDF, Word, Excel, PowerPoint, CSV, TXT) ทางด้านขวา<br>แต่ละแชทเป็นคลังเอกสารแยกกัน อัปโหลดได้หลายไฟล์{% endif %}</p>
+          <div class="rag-steps">
+            <div><b>1</b>อัปโหลดเอกสาร</div><div><b>2</b>ระบบแบ่งเนื้อหา + ทำดัชนี</div><div><b>3</b>ถาม แล้วได้คำตอบพร้อม [อ้างอิง]</div>
+          </div>
+        </div>
+        {% endif %}
+        {% for m in chat_messages %}
+        <div class="msg msg-{{ m.role }}" data-msg-id="{{ m.pk }}">
+          {% if m.role == "assistant" %}<div class="msg-avatar"><svg viewBox="0 0 32 32"><path d="M10 9v8a6 6 0 0 0 12 0V9" stroke="currentColor" stroke-width="3.2" fill="none" stroke-linecap="round"/></svg></div>{% endif %}
+          <div class="msg-body">
+            {% if m.role == "assistant" %}<div class="msg-meta">{{ m.model }}</div>{% endif %}
+            <div class="msg-content {% if m.role == 'assistant' %}md{% endif %}">{{ m.content }}</div>
+            {% if m.role == "assistant" %}<div class="sources-slot"></div><div class="msg-tools"><button class="tool-btn" data-copy>คัดลอก</button></div>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    <footer class="composer-wrap">
+      <form class="composer" id="composer">
+        <textarea id="input" rows="1" placeholder="{% if chat %}ถามจากเอกสาร เช่น เงื่อนไขการรับประกันมีอะไรบ้าง{% else %}อัปโหลดเอกสารก่อน แล้วถามได้เลย…{% endif %}" {% if not has_api_key %}disabled{% endif %}></textarea>
+        <button type="submit" class="send-btn" id="sendBtn" title="ส่ง" {% if not has_api_key %}disabled{% endif %}>
+          <svg class="i-send" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><svg class="i-stop" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>
+        </button>
+      </form>
+      <div class="composer-hint">คำตอบอ้างอิงจากเอกสารที่อัปโหลดเท่านั้น · คลิกเลข [n] เพื่อดูข้อความต้นฉบับ</div>
+    </footer>
+  </div>
+
+  <aside class="rag-docs" id="docsPanel">
+    <div class="rag-docs-head">
+      <b>เอกสารในแชทนี้</b>
+      <span class="muted small" id="docCount"></span>
+      <button type="button" class="icon-btn xs only-mobile-inline" id="docsClose" aria-label="ปิด"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="dropzone" id="docDrop" tabindex="0">
+      <input type="file" id="docInput" multiple accept="{{ accept }}" hidden>
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+      <div><b>ลากไฟล์มาวาง</b> หรือ <u>เลือกไฟล์</u></div>
+      <div class="muted small">PDF · DOCX · XLSX · PPTX · CSV · TXT/MD · ≤ {{ max_mb }} MB</div>
+    </div>
+    <div class="doc-list" id="docList"></div>
+    <div class="rag-docs-foot muted small" id="searchMode"></div>
+  </aside>
+</div>
+
+<div class="modal" id="settingsModal" aria-hidden="true">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel narrow-panel" role="dialog">
+    <div class="modal-head"><div><h2>ตั้งค่าการค้นหา</h2><p class="muted small">ใช้กับแชทนี้เท่านั้น</p></div>
+      <button class="icon-btn" data-close aria-label="ปิด"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="embedSelect">โมเดล Embedding (ค้นหาเชิงความหมาย)</label>
+        <select id="embedSelect" class="input select"><option>กำลังโหลด…</option></select>
+        <div class="help">โมเดลที่รองรับหลายภาษา (เช่น bge-m3, multilingual-e5, gemini-embedding) ค้นภาษาไทยได้ดีกว่า · เปลี่ยนโมเดลแล้วระบบจะสร้างดัชนีใหม่ให้อัตโนมัติ</div>
+      </div>
+      <div class="field">
+        <label>จำนวนข้อความอ้างอิงต่อคำถาม: <b id="topkOut">{{ top_k }}</b></label>
+        <div class="range-row"><input type="range" id="topk" min="2" max="15" value="{{ top_k }}"></div>
+        <div class="help">มากขึ้น = ครอบคลุมขึ้น แต่ใช้ token มากขึ้น</div>
+      </div>
+      <div class="actions"><button class="btn btn-ghost" data-close>ยกเลิก</button><button class="btn btn-primary" id="saveSettings">บันทึก</button></div>
+    </div>
+  </div>
+</div>
+
+{% include "chat/_model_picker.html" %}
+{% endblock %}
+
+{% block scripts %}
+{{ docs_json|json_script:"ragDocs" }}
+{{ sources_json|json_script:"ragSources" }}
+<script src="{% static 'vendor/marked.min.js' %}"></script>
+<script src="{% static 'vendor/purify.min.js' %}"></script>
+<script src="{% static 'vendor/highlight.min.js' %}"></script>
+<script>
+  window.PAGE = {
+    chatId: {{ chat.pk|default:"null" }},
+    currentModel: "{{ current_model|escapejs }}",
+    embedModel: "{{ embed_model|escapejs }}",
+    modelsUrl: "{% url 'chat:api_models' %}",
+    embedModelsUrl: "{% url 'rag:api_embed_models' %}",
+    uploadUrl: "{% url 'rag:api_upload' %}",
+    askUrl: "{% url 'rag:api_ask' %}",
+    indexUrl: "{% url 'rag:index' %}",
+    apiBase: "{% url 'rag:index' %}api/",
+    maxMb: {{ max_mb }},
+    csrf: "{{ csrf_token }}",
+  };
+</script>
+<script src="{% static 'js/models.js' %}"></script>
+<script src="{% static 'js/convo.js' %}"></script>
+<script src="{% static 'js/rag.js' %}"></script>
+{% endblock %}

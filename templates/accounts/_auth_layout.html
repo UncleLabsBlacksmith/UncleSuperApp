@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block body_class %}auth-page{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-grid-bg"></div>
+  <div class="auth-card">
+    <div class="auth-brand">
+      <span class="logo-mark lg"><svg viewBox="0 0 32 32"><path d="M10 9v8a6 6 0 0 0 12 0V9" stroke="currentColor" stroke-width="3.2" fill="none" stroke-linecap="round"/></svg></span>
+      <div>
+        <div class="auth-title">Uncle <b>Super App</b></div>
+        <div class="auth-sub">AI Chat · หลายโมเดล · ผ่าน OpenRouter</div>
+      </div>
+    </div>
+    {% block auth_content %}{% endblock %}
+  </div>
+  <div class="auth-foot">Developed by <a href="https://uncle-engineer.com/" target="_blank" rel="noopener">Uncle Engineer</a></div>
+</div>
+{% endblock %}

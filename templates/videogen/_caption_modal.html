@@ -1,0 +1,32 @@
+<div class="modal" id="captionModal" aria-hidden="true">
+  <div class="modal-backdrop" data-close-caption></div>
+  <div class="modal-panel narrow-panel caption-panel" role="dialog">
+    <div class="modal-head">
+      <div><h2>📝 คำอธิบายสำหรับโพสต์</h2><p class="muted small">สำหรับ YouTube / TikTok / Facebook — แก้ไขได้ก่อนคัดลอก</p></div>
+      <button class="icon-btn" type="button" data-close-caption aria-label="ปิด"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="caption-lang">
+        <span class="muted small">ภาษา</span>
+        <div class="segmented" id="capLang">
+          <button type="button" data-value="th" class="active">ไทย</button>
+          <button type="button" data-value="en">English</button>
+          <button type="button" data-value="both">ไทย + English</button>
+        </div>
+      </div>
+      <div class="caption-loading" id="capLoading" hidden><span class="spinner"></span> AI กำลังเขียนคำอธิบาย…</div>
+      <div id="capBody">
+        <div class="field"><div class="label-row"><label for="capTitle">ชื่อคลิป</label><button type="button" class="tool-btn" data-copy-field="capTitle">คัดลอก</button></div>
+          <input id="capTitle" class="input"></div>
+        <div class="field"><div class="label-row"><label for="capDesc">คำอธิบาย</label><button type="button" class="tool-btn" data-copy-field="capDesc">คัดลอก</button></div>
+          <textarea id="capDesc" class="input textarea" rows="7"></textarea></div>
+        <div class="field"><div class="label-row"><label for="capTags">แฮชแท็ก</label><button type="button" class="tool-btn" data-copy-field="capTags">คัดลอก</button></div>
+          <textarea id="capTags" class="input textarea" rows="2"></textarea></div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" id="capRegen">↻ เขียนใหม่</button>
+        <button type="button" class="btn btn-primary" id="capCopyAll">คัดลอกทั้งหมด</button>
+      </div>
+    </div>
+  </div>
+</div>

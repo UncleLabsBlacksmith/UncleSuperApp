@@ -1,0 +1,27 @@
+{% load imagegen_tags %}<article class="gen-card{% if g.status == 'error' %} is-error{% endif %}" data-gen-id="{{ g.pk }}" data-prompt="{{ g.prompt }}" data-model="{{ g.model }}" data-params="{{ g.params|tojson }}">
+  <header class="gen-head">
+    <p class="gen-prompt">{{ g.prompt }}</p>
+    <div class="gen-meta">
+      <span class="pill mono">{{ g.model }}</span>
+      {% for k, v in g.params.items %}<span class="pill">{{ k }}: <b>{{ v }}</b></span>{% endfor %}
+      {% if g.cost %}<span class="pill">${{ g.cost|floatformat:4 }}</span>{% endif %}
+      {% if g.duration_ms %}<span class="pill">{{ g.duration_ms|seconds }}</span>{% endif %}
+      <span class="muted small">{{ g.created_at|date:"j M H:i" }}</span>
+    </div>
+  </header>
+  {% with refs=g.references.all %}{% if refs %}
+  <div class="gen-refs">
+    <span class="muted small">ภาพอ้างอิง</span>
+    {% for r in refs %}<a href="{% url 'imagegen:file' 'ref' r.pk %}" target="_blank" rel="noopener"><img src="{% url 'imagegen:file' 'ref' r.pk %}" alt="{{ r.original_name }}" title="{{ r.original_name }}"></a>{% endfor %}
+  </div>
+  {% endif %}{% endwith %}
+  {% if g.status == 'error' %}<div class="err-box">⚠ {{ g.error }}</div>{% endif %}
+  {% with imgs=g.images.all %}{% if imgs %}
+  <div class="gen-images count-{{ imgs|length }}">
+    {% for img in imgs %}{% include "imagegen/_image_tile.html" %}{% endfor %}
+  </div>
+  {% endif %}{% endwith %}
+  <footer class="gen-actions">
+    <button type="button" class="tool-btn" data-reuse>↺ ใช้ prompt และการตั้งค่านี้</button>
+  </footer>
+</article>
