@@ -41,6 +41,9 @@ staticfiles/
 /*.pdf
 /*.pptx
 
+# --- สคริปต์ส่วนตัวของผู้ดูแล repo ---
+push_github.bat
+
 # --- ไฟล์ชั่วคราว ---
 _to_delete/
 *.log

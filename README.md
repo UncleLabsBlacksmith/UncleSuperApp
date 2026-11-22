@@ -292,7 +292,6 @@ Django admin ดั้งเดิมอยู่ที่ `/django-admin/`
 - `secret_key.txt` ⚠️ ถ้าไฟล์นี้หายหรือเปลี่ยน API Key ที่บันทึกไว้ทั้งหมดจะถอดรหัสไม่ได้ ผู้ใช้ต้องใส่ใหม่
 
 **GitHub:** https://github.com/UncleLabsBlacksmith/UncleSuperApp
-ดับเบิลคลิก **`push_github.bat`** เพื่อ commit และ push ขึ้น GitHub (ต้องมี [Git for Windows](https://git-scm.com/download/win) ครั้งแรกจะมีหน้าต่างให้ล็อกอิน GitHub) ใช้ไฟล์เดิมนี้ push ซ้ำได้ทุกครั้งที่แก้โค้ด
 
 **Git:** โปรเจกต์มีไฟล์ **`.gitignore`** อยู่แล้ว (Windows Explorer อาจซ่อนไฟล์ที่ขึ้นต้นด้วยจุด) ไฟล์นี้กันไม่ให้ไฟล์เหล่านี้ขึ้น Git:
 `.venv/`, `__pycache__/`, `db.sqlite3*`, `secret_key.txt`, `.env`, `media/`, `staticfiles/`, `_to_delete/`, ไฟล์ log และไฟล์ของ editor/OS
@@ -332,7 +331,6 @@ static/vendor/   marked, DOMPurify, highlight.js, Chart.js (ไม่ต้อ�
 media/           ไฟล์ที่ผู้ใช้อัปโหลดและผลลัพธ์ (สร้างอัตโนมัติ)
 run.bat          เปิดใช้งานบน Windows (ติดตั้ง + migrate + runserver)
 create_admin.bat สร้างบัญชี Admin
-push_github.bat  commit + push ขึ้น GitHub
 ```
 
 **ไลบรารีที่ใช้:** Django, requests, cryptography, imageio-ffmpeg, pypdf, openpyxl (ทั้งหมดติดตั้งผ่าน `requirements.txt`)
