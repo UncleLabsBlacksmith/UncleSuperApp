@@ -7,6 +7,7 @@
   {% if form.non_field_errors %}<div class="alert alert-error">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</div>{% endif %}
   {% with field=form.username %}{% include "accounts/_field.html" %}{% endwith %}
   {% with field=form.password %}{% include "accounts/_field.html" %}{% endwith %}
+  <div class="forgot-row"><a href="{% url 'accounts:forgot_password' %}">ลืมรหัสผ่าน?</a></div>
   <input type="hidden" name="next" value="{{ next }}">
   <button class="btn btn-primary btn-block btn-lg">เข้าสู่ระบบ</button>
 </form>

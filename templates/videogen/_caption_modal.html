@@ -13,8 +13,18 @@
           <button type="button" data-value="en">English</button>
           <button type="button" data-value="both">ไทย + English</button>
         </div>
+        <button type="button" class="tool-btn cap-hist-btn" id="capHistBtn" aria-expanded="false">
+          <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/></svg>ประวัติ <span id="capHistCount" class="cap-count">0</span>
+        </button>
       </div>
       <div class="caption-loading" id="capLoading" hidden><span class="spinner"></span> AI กำลังเขียนคำอธิบาย…</div>
+      <div id="capHist" class="cap-hist" hidden>
+        <div class="cap-hist-head">
+          <span class="muted small" id="capHistNote">คลิกรายการเพื่อนำกลับมาใช้</span>
+          <button type="button" class="tool-btn" id="capHistBack">← กลับ</button>
+        </div>
+        <div id="capHistList" class="cap-hist-list"></div>
+      </div>
       <div id="capBody">
         <div class="field"><div class="label-row"><label for="capTitle">ชื่อคลิป</label><button type="button" class="tool-btn" data-copy-field="capTitle">คัดลอก</button></div>
           <input id="capTitle" class="input"></div>
@@ -22,8 +32,10 @@
           <textarea id="capDesc" class="input textarea" rows="7"></textarea></div>
         <div class="field"><div class="label-row"><label for="capTags">แฮชแท็ก</label><button type="button" class="tool-btn" data-copy-field="capTags">คัดลอก</button></div>
           <textarea id="capTags" class="input textarea" rows="2"></textarea></div>
+        <div class="cap-meta muted small" id="capMeta"></div>
       </div>
-      <div class="actions">
+      <div class="actions" id="capActions">
+        <button type="button" class="btn btn-ghost" id="capSave" title="เก็บข้อความที่แก้ไว้เป็นอีกเวอร์ชันในประวัติ">💾 บันทึกเวอร์ชันนี้</button>
         <button type="button" class="btn btn-ghost" id="capRegen">↻ เขียนใหม่</button>
         <button type="button" class="btn btn-primary" id="capCopyAll">คัดลอกทั้งหมด</button>
       </div>

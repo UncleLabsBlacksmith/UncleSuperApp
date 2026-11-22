@@ -3,7 +3,7 @@
   {% for p in projects %}
   <li class="conv-item {% if project and p.pk == project.pk %}active{% endif %}" data-id="{{ p.pk }}">
     <a href="{% url 'videogen:project' p.pk %}" class="conv-link" title="{{ p.title }}">
-      <span class="job-dot st-{{ p.status }}{% if not p.seen and not p.is_active %} unseen{% endif %}"></span>{{ p.title }}
+      <span class="job-dot st-{{ p.status }}{% if not p.seen and not p.is_active %} unseen{% endif %}"></span>{% if p.mode == "series" %}<svg class="mode-ico mode-series" viewBox="0 0 24 24" aria-label="Series Video"><title>Series Video</title><rect x="2" y="7" width="14" height="13" rx="2"/><path d="M6 4h12a2 2 0 0 1 2 2v10M9 1.5h11.5A2 2 0 0 1 22.5 3.5V13"/><path d="M7.5 11v5l4-2.5z"/></svg>{% else %}<svg class="mode-ico mode-single" viewBox="0 0 24 24" aria-label="Single Video"><title>Single Video</title><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10.5l6-3.5v10l-6-3.5"/></svg>{% endif %}<span class="conv-title">{{ p.title }}</span>
     </a>
   </li>
   {% empty %}

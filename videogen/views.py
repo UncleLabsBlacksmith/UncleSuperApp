@@ -15,7 +15,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
 from . import client
-from .models import Scene, SceneVersion, VideoProject
+from .models import PostCaption, Scene, SceneVersion, VideoProject
 from .worker import compose_prompt
 
 logger = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ def project_detail(request, pk):
         "projects": _sidebar(request.user),
         "voice": (project.config or {}).get("audio_mode") == "voice",
         "ar_css": ((project.config or {}).get("aspect_ratio") or "16:9").replace(":", " / "),
-        "captions": _captions(project.config or {}),
+        "captions": _latest_captions(project),
     })
 
 
@@ -481,13 +481,12 @@ def api_scene_restore(request, pk):
     return JsonResponse({"ok": True})
 
 
-def _captions(cfg: dict) -> dict:
-    """คำอธิบายสำหรับโพสต์ที่บันทึกไว้ แยกตามภาษา {"th": {...}, "en": {...}, "both": {...}}"""
-    captions = dict(cfg.get("captions") or {})
-    old = cfg.get("caption")
-    if old and old.get("description") and old.get("lang", "th") not in captions:
-        captions[old.get("lang", "th")] = old
-    return captions
+def _latest_captions(project) -> dict:
+    """คำอธิบายล่าสุดของแต่ละภาษา {"th": {...}, "en": {...}} สำหรับเปิดหน้าต่างครั้งแรก"""
+    out = {}
+    for c in project.captions.all()[:60]:
+        out.setdefault(c.lang, c.as_dict())
+    return out
 
 
 @login_required
@@ -516,13 +515,60 @@ def api_assist_description(request):
         result = client.assist_description(api_key, _helper_model(request.user), req)
     except (ValueError, requests.RequestException) as e:
         return JsonResponse({"error": str(e)}, status=502)
-    if project and req["action"] == "caption":
-        cfg = project.config or {}
-        captions = _captions(cfg)
-        captions[result["lang"]] = result
-        project.config = {**cfg, "captions": captions, "caption": result}  # caption = ล่าสุด (รองรับข้อมูลเดิม)
-        project.save(update_fields=["config"])
+    if req["action"] == "caption":  # เก็บประวัติทุกครั้งที่ AI เขียน
+        cap = PostCaption.objects.create(
+            user=request.user, project=project, lang=result["lang"], source=PostCaption.Source.AI,
+            title=result["title"][:200], description=result["description"], hashtags=result["hashtags"],
+            idea=(project.idea if project else str(req.get("idea") or ""))[:2000])
+        result = cap.as_dict()
     return JsonResponse({"ok": True, **result})
+
+
+def _caption_qs(request, project_id):
+    qs = PostCaption.objects.filter(user=request.user)
+    if project_id:
+        project = get_object_or_404(VideoProject, pk=project_id, user=request.user)
+        return qs.filter(project=project), project
+    return qs.filter(project__isnull=True), None
+
+
+@login_required
+@require_GET
+def api_captions(request):
+    """ประวัติคำอธิบายสำหรับโพสต์ — ของงานวิดีโอ (?project=<id>) หรือของหน้าสร้าง (ไม่ระบุ)"""
+    qs, _ = _caption_qs(request, request.GET.get("project"))
+    return JsonResponse({"ok": True, "items": [c.as_dict() for c in qs[:100]]})
+
+
+@login_required
+@require_POST
+def api_caption_save(request):
+    """บันทึกข้อความที่ผู้ใช้แก้เองเป็นอีกเวอร์ชันในประวัติ"""
+    try:
+        req = json.loads(request.body or b"{}")
+    except json.JSONDecodeError:
+        return _bad("invalid json")
+    _, project = _caption_qs(request, req.get("project_id"))
+    title, desc = str(req.get("title") or "").strip(), str(req.get("description") or "").strip()
+    if not (title or desc):
+        return _bad("ยังไม่มีข้อความให้บันทึก")
+    tags = req.get("hashtags") or []
+    if isinstance(tags, str):
+        tags = tags.split()
+    lang = req.get("lang") if req.get("lang") in PostCaption.Lang.values else "th"
+    cap = PostCaption.objects.create(
+        user=request.user, project=project, lang=lang, source=PostCaption.Source.EDITED, title=title[:200],
+        description=desc, hashtags=[str(t) for t in tags if str(t).strip()][:30],
+        idea=(project.idea if project else str(req.get("idea") or ""))[:2000])
+    return JsonResponse({"ok": True, **cap.as_dict()})
+
+
+@login_required
+@require_POST
+def api_caption_delete(request, pk):
+    cap = get_object_or_404(PostCaption, pk=pk, user=request.user)
+    cap.delete()
+    return JsonResponse({"ok": True})
 
 
 @login_required

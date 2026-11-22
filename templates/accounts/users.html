@@ -1,11 +1,87 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}จัดการผู้ใช้ · Uncle Super App{% endblock %}
 {% block main %}
 <header class="page-head">
   <button class="icon-btn only-mobile" data-open-sidebar aria-label="เมนู"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
-  <div><h1>จัดการผู้ใช้</h1><p class="muted">กำหนดประเภทผู้ใช้และเปิด/ปิดบัญชี</p></div>
+  <div><h1>จัดการผู้ใช้</h1><p class="muted">เพิ่มผู้ใช้ กำหนดประเภท เปิด/ปิดบัญชี และสร้างลิงก์รีเซ็ตรหัสผ่าน</p></div>
+  <button type="button" class="btn btn-primary head-action" data-open="addUserModal">
+    <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>เพิ่มผู้ใช้
+  </button>
 </header>
 <div class="page-body">
+
+  {% if issued %}
+  <section class="card issue-card" id="issuedLink">
+    <div class="issue-head">
+      <div><h3>🔑 ลิงก์รีเซ็ตรหัสผ่านของ <b>{{ issued.username }}</b></h3>
+        <p class="muted small">ใช้ได้ครั้งเดียว · หมดอายุ {{ issued.expires }} · <b>แสดงครั้งเดียว</b> ถ้าปิดหน้านี้ต้องสร้างลิงก์ใหม่</p></div>
+      <button type="button" class="icon-btn" data-dismiss="issuedLink" aria-label="ปิด"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="copy-line"><input class="input mono" id="issuedUrl" value="{{ issued.url }}" readonly><button type="button" class="btn btn-ghost" data-copy="#issuedUrl">คัดลอกลิงก์</button></div>
+    <textarea id="issuedMsg" class="input textarea mono-soft" rows="8" readonly>{{ issued.mail_body }}</textarea>
+    <div class="issue-actions">
+      {% if issued.email %}
+      <a class="btn btn-primary" href="mailto:{{ issued.email }}?subject={{ issued.mail_subject|urlencode }}&body={{ issued.mail_body|urlencode }}">
+        <svg viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M22 6l-10 7L2 6"/></svg>เปิดโปรแกรมอีเมลถึง {{ issued.email }}</a>
+      {% else %}
+      <span class="muted small">ผู้ใช้นี้ไม่มีอีเมลในระบบ — คัดลอกข้อความแล้วส่งทาง LINE / แชทได้</span>
+      {% endif %}
+      <button type="button" class="btn btn-ghost" data-copy="#issuedMsg">คัดลอกข้อความทั้งหมด</button>
+    </div>
+    {% if local_host_warning %}
+    <div class="alert alert-warn small">⚠️ ลิงก์นี้ขึ้นต้นด้วย <code>127.0.0.1 / localhost</code> ซึ่งเปิดได้เฉพาะเครื่องนี้เท่านั้น ถ้าผู้ใช้อยู่เครื่องอื่น ให้เปิดหน้านี้ผ่าน IP ของเครื่อง (เช่น <code>http://192.168.x.x:8000</code>) แล้วสร้างลิงก์ใหม่ หรือตั้งค่า <code>SITE_URL</code></div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if created %}
+  <section class="card issue-card" id="createdUser">
+    <div class="issue-head">
+      <div><h3>✅ เพิ่มผู้ใช้ <b>{{ created.username }}</b> แล้ว</h3>
+        <p class="muted small">{% if created.generated %}รหัสผ่านถูกสุ่มให้ และ<b>แสดงครั้งเดียว</b> — คัดลอกส่งให้ผู้ใช้ แล้วแนะนำให้เปลี่ยนหลังเข้าสู่ระบบ{% else %}ใช้รหัสผ่านที่คุณตั้งไว้ — แจ้งผู้ใช้แยกต่างหาก{% endif %}</p></div>
+      <button type="button" class="icon-btn" data-dismiss="createdUser" aria-label="ปิด"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    {% if created.generated %}
+    <div class="copy-line"><input class="input mono" id="createdPw" value="{{ created.password }}" readonly><button type="button" class="btn btn-ghost" data-copy="#createdPw">คัดลอกรหัสผ่าน</button></div>
+    {% endif %}
+    <textarea id="createdMsg" class="input textarea mono-soft" rows="6" readonly>{{ created.message }}</textarea>
+    <div class="issue-actions">
+      {% if created.email %}<a class="btn btn-primary" href="mailto:{{ created.email }}?subject={{ 'บัญชี Uncle Super App ของคุณ'|urlencode }}&body={{ created.message|urlencode }}">เปิดโปรแกรมอีเมลถึง {{ created.email }}</a>{% endif %}
+      <button type="button" class="btn btn-ghost" data-copy="#createdMsg">คัดลอกข้อความทั้งหมด</button>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if reset_requests %}
+  <section class="card no-pad req-card">
+    <div class="req-head"><h3>คำขอรีเซ็ตรหัสผ่าน <span class="nav-badge warn">{{ reset_requests|length }}</span></h3>
+      <span class="muted small">ผู้ใช้กด "ลืมรหัสผ่าน" — สร้างลิงก์แล้วส่งให้ผู้ใช้ทางอีเมล/แชทด้วยตัวเอง</span></div>
+    <table class="table">
+      <thead><tr><th>กรอกมาว่า</th><th>บัญชีที่ตรงกัน</th><th>ข้อความ</th><th>เวลา</th><th></th></tr></thead>
+      <tbody>
+      {% for r in reset_requests %}
+        <tr>
+          <td class="strong">{{ r.identifier }}</td>
+          <td>{% if r.user %}{{ r.user.username }}<div class="muted small">{{ r.user.email|default:"ไม่มีอีเมล" }}</div>{% else %}<span class="muted">ไม่พบบัญชี</span>{% endif %}</td>
+          <td class="small">{{ r.note|default:"—" }}</td>
+          <td class="muted small">{{ r.created_at|date:"j M Y H:i" }}</td>
+          <td class="right nowrap">
+            {% if r.user %}
+              {% if r.active_link %}<span class="status status-ok small"><i></i>ส่งลิงก์แล้ว</span>{% endif %}
+              <form method="post" action="{% url 'accounts:reset_link_create' r.user.pk %}" class="inline"{% if r.active_link %} data-confirm="สร้างลิงก์ใหม่จะยกเลิกลิงก์เดิมของ {{ r.user.username }} — ดำเนินการต่อ?"{% endif %}>
+                {% csrf_token %}<button class="btn btn-primary sm">{% if r.active_link %}สร้างลิงก์ใหม่{% else %}🔑 สร้างลิงก์รีเซ็ต{% endif %}</button>
+              </form>
+            {% endif %}
+            <form method="post" action="{% url 'accounts:reset_request_dismiss' r.pk %}" class="inline">{% csrf_token %}<button class="btn btn-ghost sm">ปิดคำขอ</button></form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
   <div class="stat-row">
     <div class="stat"><span class="stat-num">{{ users|length }}</span><span class="stat-label">ผู้ใช้ทั้งหมด</span></div>
     {% for value, label in roles %}
@@ -37,10 +113,18 @@
             {% endif %}
           </td>
           <td>{{ u.conv_count }}</td>
-          <td>{% if u.is_active %}<span class="status status-ok"><i></i>ใช้งาน</span>{% else %}<span class="status status-off"><i></i>ปิดอยู่</span>{% endif %}</td>
+          <td>{% if u.is_active %}<span class="status status-ok"><i></i>ใช้งาน</span>{% else %}<span class="status status-off"><i></i>ปิดอยู่</span>{% endif %}
+            {% if u.active_link %}<div class="muted small link-note" title="ลิงก์รีเซ็ตรหัสผ่านที่ยังใช้ได้">🔑 ลิงก์ใช้ได้ถึง {{ u.active_link.expires_at|date:"j M H:i" }}</div>{% endif %}
+          </td>
           <td class="muted small">{{ u.last_login|date:"j M Y H:i"|default:"—" }}</td>
-          <td class="right">
+          <td class="right nowrap">
             {% if u != user and not u.is_superuser or u != user and user.is_superuser %}
+            <form method="post" action="{% url 'accounts:reset_link_create' u.pk %}" class="inline"{% if u.active_link %} data-confirm="สร้างลิงก์ใหม่จะยกเลิกลิงก์เดิมของ {{ u.username }} — ดำเนินการต่อ?"{% endif %}>
+              {% csrf_token %}<button class="btn btn-ghost sm" title="สร้างลิงก์ให้ผู้ใช้ตั้งรหัสผ่านใหม่เอง">🔑 ลิงก์รีเซ็ตรหัส</button>
+            </form>
+            {% if u.active_link %}
+            <form method="post" action="{% url 'accounts:reset_link_revoke' u.pk %}" class="inline">{% csrf_token %}<button class="btn btn-ghost sm" title="ยกเลิกลิงก์รีเซ็ตที่ยังใช้ได้">ยกเลิกลิงก์</button></form>
+            {% endif %}
             <form method="post" action="{% url 'accounts:user_update' u.pk %}" class="inline">
               {% csrf_token %}
               <button name="toggle_active" class="btn btn-ghost sm">{% if u.is_active %}ปิดบัญชี{% else %}เปิดบัญชี{% endif %}</button>
@@ -52,6 +136,37 @@
       </tbody>
     </table>
   </div>
-  <p class="muted small" style="margin-top:14px">สิทธิ์ของแต่ละประเภทปรับได้ใน <code>config/settings.py → ROLE_PERMISSIONS</code></p>
+  <p class="muted small" style="margin-top:14px">สิทธิ์ของแต่ละประเภทปรับได้ใน <code>config/settings.py → ROLE_PERMISSIONS</code> · ลิงก์รีเซ็ตมีอายุ {{ link_hours }} ชั่วโมง (ตั้งได้ด้วย <code>PASSWORD_RESET_LINK_HOURS</code>)</p>
 </div>
+
+<div class="modal" id="addUserModal" aria-hidden="true">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel narrow-panel" role="dialog" aria-labelledby="addUserTitle">
+    <div class="modal-head">
+      <div><h2 id="addUserTitle">เพิ่มผู้ใช้</h2><p class="muted small">เว้นรหัสผ่านว่างไว้ ระบบจะสุ่มให้และแสดงให้คัดลอกครั้งเดียว</p></div>
+      <button class="icon-btn" type="button" data-close aria-label="ปิด"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <form method="post" action="{% url 'accounts:user_create' %}" class="modal-body form">
+      {% csrf_token %}
+      <div class="row-2">
+        {% with field=create_form.username %}{% include "accounts/_field.html" %}{% endwith %}
+        {% with field=create_form.role %}{% include "accounts/_field.html" %}{% endwith %}
+      </div>
+      {% with field=create_form.email %}{% include "accounts/_field.html" %}{% endwith %}
+      <div class="row-2">
+        {% with field=create_form.first_name %}{% include "accounts/_field.html" %}{% endwith %}
+        {% with field=create_form.last_name %}{% include "accounts/_field.html" %}{% endwith %}
+      </div>
+      {% with field=create_form.password %}{% include "accounts/_field.html" %}{% endwith %}
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" data-close>ยกเลิก</button>
+        <button class="btn btn-primary">เพิ่มผู้ใช้</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/users.js' %}"></script>
 {% endblock %}

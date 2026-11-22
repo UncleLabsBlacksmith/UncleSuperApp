@@ -82,3 +82,48 @@ class ProfileForm(StyledMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._style()
+
+
+class AdminCreateUserForm(StyledMixin, forms.ModelForm):
+    """แอดมินเพิ่มผู้ใช้ — เว้นรหัสผ่านว่างไว้ ระบบจะสุ่มให้"""
+
+    password = forms.CharField(
+        label="รหัสผ่าน", required=False, strip=False,
+        widget=forms.TextInput(attrs={"placeholder": "เว้นว่าง = สุ่มให้อัตโนมัติ", "autocomplete": "new-password"}),
+    )
+
+    class Meta:
+        model = User
+        fields = ("username", "email", "first_name", "last_name", "role")
+        labels = {"username": "ชื่อผู้ใช้", "email": "อีเมล", "first_name": "ชื่อ", "last_name": "นามสกุล", "role": "ประเภทผู้ใช้"}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].help_text = ""
+        self.fields["username"].widget.attrs.update(placeholder="เช่น somchai", autocomplete="off")
+        self.fields["email"].widget.attrs.update(placeholder="ใช้ส่งลิงก์รีเซ็ตรหัสผ่าน (ไม่บังคับ)")
+        self._style()
+
+    def clean_username(self):
+        username = self.cleaned_data["username"]
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError("มีชื่อผู้ใช้นี้แล้ว")
+        return username
+
+    def clean_password(self):
+        from django.contrib.auth.password_validation import validate_password
+        pw = self.cleaned_data.get("password") or ""
+        if pw:
+            validate_password(pw, User(username=self.cleaned_data.get("username", "")))
+        return pw
+
+
+class ForgotPasswordForm(StyledMixin, forms.Form):
+    identifier = forms.CharField(label="ชื่อผู้ใช้ หรือ อีเมล", max_length=254,
+                                 widget=forms.TextInput(attrs={"placeholder": "ชื่อผู้ใช้หรืออีเมลที่ใช้สมัคร", "autofocus": True}))
+    note = forms.CharField(label="ข้อความถึงแอดมิน (ไม่บังคับ)", max_length=300, required=False,
+                           widget=forms.TextInput(attrs={"placeholder": "เช่น ช่องทางติดต่อกลับ LINE / เบอร์โทร"}))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._style()

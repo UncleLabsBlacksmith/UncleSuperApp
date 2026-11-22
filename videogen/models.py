@@ -118,6 +118,41 @@ class SceneVersion(models.Model):
         return self.scene.project
 
 
+class PostCaption(models.Model):
+    """ประวัติ "คำอธิบายสำหรับโพสต์" (ชื่อคลิป + description + แฮชแท็ก)
+    project = None คือที่สร้างจากหน้าสร้างวิดีโอ (ยังไม่มีงาน)"""
+
+    class Lang(models.TextChoices):
+        TH = "th", "ไทย"
+        EN = "en", "English"
+        BOTH = "both", "ไทย + English"
+
+    class Source(models.TextChoices):
+        AI = "ai", "AI เขียน"
+        EDITED = "edited", "แก้ไขเอง"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="post_captions")
+    project = models.ForeignKey(VideoProject, on_delete=models.CASCADE, null=True, blank=True, related_name="captions")
+    lang = models.CharField(max_length=8, choices=Lang.choices, default=Lang.TH)
+    source = models.CharField(max_length=10, choices=Source.choices, default=Source.AI)
+    title = models.CharField(max_length=200, blank=True, default="")
+    description = models.TextField(blank=True, default="")
+    hashtags = models.JSONField(default=list, blank=True)
+    idea = models.TextField(blank=True, default="")  # ไอเดียตอนสร้าง (ใช้แสดงในประวัติของหน้าสร้าง)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def as_dict(self) -> dict:
+        from django.utils import timezone
+        return {
+            "id": self.pk, "lang": self.lang, "source": self.source, "title": self.title,
+            "description": self.description, "hashtags": list(self.hashtags or []), "idea": self.idea[:160],
+            "created_at": timezone.localtime(self.created_at).strftime("%d/%m/%Y %H:%M"),
+        }
+
+
 @receiver(post_delete, sender=SceneVersion)
 @receiver(post_delete, sender=Scene)
 def _delete_scene_file(sender, instance, **kwargs):

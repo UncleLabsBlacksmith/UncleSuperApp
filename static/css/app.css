@@ -707,6 +707,10 @@ form.inline { display: inline; }
 .job-dot.st-partial { background: var(--warn); }
 .job-dot.st-failed { background: var(--danger); }
 .job-dot.unseen { box-shadow: 0 0 0 3px rgba(52, 211, 153, .25); }
+.mode-ico { width: 15px; height: 15px; margin-right: 7px; vertical-align: -3px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; opacity: .75; flex: none; }
+.mode-ico.mode-series { color: #c7b6ff; }
+.mode-ico.mode-single { color: #9ad0ff; }
+.conv-item.active .mode-ico, .conv-item:hover .mode-ico { opacity: 1; }
 
 /* project page */
 .vp-head { align-items: flex-start; flex-wrap: wrap; }
@@ -918,6 +922,27 @@ a.cite:hover { background: var(--accent); color: var(--accent-ink); }
 .idea-card span { font-size: 12.5px; color: var(--text-2); line-height: 1.55; }
 .caption-panel .field { margin-bottom: 12px; }
 .caption-lang { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.cap-hist-btn { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; }
+.cap-hist-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cap-hist-btn.on { color: var(--accent); border-color: rgba(var(--accent-rgb), .5); background: var(--accent-soft); }
+.cap-count { display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--surface-3); font-size: 11px; text-align: center; }
+.cap-hist-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.cap-hist-list { display: flex; flex-direction: column; gap: 8px; max-height: min(58vh, 520px); overflow-y: auto; padding-right: 2px; }
+.cap-hist-empty { padding: 26px 8px; text-align: center; }
+.cap-item { position: relative; padding: 10px 12px; border: 1px solid var(--border-2); border-radius: 10px; background: var(--bg-2); cursor: pointer; transition: .12s; }
+.cap-item:hover, .cap-item:focus-visible { border-color: rgba(var(--accent-rgb), .55); background: var(--surface-2); outline: none; }
+.cap-item.current { border-color: rgba(var(--accent-rgb), .7); box-shadow: inset 3px 0 0 var(--accent); }
+.cap-item-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+.cap-badge { font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: var(--surface-3); color: var(--text-2); }
+.cap-badge.lang-en { color: #9ad0ff; } .cap-badge.lang-both { color: #c7b6ff; }
+.cap-badge.src-edited { color: var(--warn); }
+.cap-cur { font-size: 10.5px; font-weight: 700; color: var(--accent); }
+.cap-del { margin-left: auto; border: 0; background: none; color: var(--muted); font-size: 17px; line-height: 1; padding: 0 4px; border-radius: 5px; cursor: pointer; }
+.cap-del:hover { color: var(--danger); background: var(--surface-3); }
+.cap-item-title { font-weight: 600; font-size: 13.5px; margin-bottom: 2px; }
+.cap-item-desc { font-size: 12.5px; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cap-item-idea { margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cap-meta { margin: -4px 0 4px; min-height: 16px; }
 .caption-loading { display: flex; align-items: center; gap: 8px; padding: 30px 0; justify-content: center; color: var(--text-2); }
 
 /* ไอคอนดูคำแปลไทย */
@@ -939,3 +964,37 @@ a.cite:hover { background: var(--accent); color: var(--accent-ink); }
 .scene-card-head .th-tip { margin-left: 2px; }
 .vp-scene-top .th-tip + .status-pill { margin-left: auto; }
 .ver-top .th-tip { margin-left: auto; }
+
+
+/* ---------------- จัดการผู้ใช้ / ลืมรหัสผ่าน ---------------- */
+.page-head .head-action { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; }
+.page-head .head-action svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.nav-badge.warn { background: var(--warn); color: #3a2a00; }
+.alert-warn { background: rgba(251, 191, 36, .08); border: 1px solid rgba(251, 191, 36, .35); color: #fde68a; margin-top: 12px; }
+.alert-warn code { color: #fff3c4; }
+.issue-card { margin-bottom: 18px; border-color: rgba(var(--accent-rgb), .45); box-shadow: 0 0 0 1px rgba(var(--accent-rgb), .12), 0 18px 40px -24px rgba(var(--accent-rgb), .6); }
+.issue-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.issue-head h3 { margin: 0 0 3px; font-size: 16px; }
+.copy-line { display: flex; gap: 8px; margin-bottom: 10px; }
+.copy-line .input { flex: 1; min-width: 0; }
+.input.mono { font-family: var(--mono); font-size: 13px; color: #cfe6ff; }
+.input.mono-soft { font-size: 13px; line-height: 1.6; }
+.issue-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.issue-actions .btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; margin-right: 6px; vertical-align: -3px; }
+.req-card { margin-bottom: 18px; border-color: rgba(251, 191, 36, .35); }
+.req-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding: 16px 18px 6px; }
+.req-head h3 { margin: 0; font-size: 15px; display: inline-flex; align-items: center; gap: 8px; }
+.req-head .nav-badge { margin-left: 0; }
+.nowrap { white-space: nowrap; }
+td.right .inline + .inline, td.right .status + .inline { margin-left: 4px; }
+.link-note { margin-top: 3px; }
+.forgot-row { text-align: right; margin: -6px 0 14px; font-size: 13px; }
+.auth-lead { margin: -4px 0 16px; line-height: 1.6; }
+.auth-done { text-align: center; padding: 6px 0 18px; }
+.auth-done p { line-height: 1.7; }
+.auth-done-ico { width: 56px; height: 56px; margin: 0 auto 10px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.auth-done-ico svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 760px) {
+  .page-head .head-action { padding: 0 12px; }
+  .copy-line { flex-direction: column; }
+}

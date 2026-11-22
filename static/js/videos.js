@@ -104,33 +104,124 @@
   })();
   const thIcon = (target) => `<button type="button" class="th-tip" data-th-target="${target}" aria-label="ดูคำแปลภาษาไทย"><svg viewBox="0 0 24 24"><path d="M3 5h9M7.5 3v2M5.5 5c.5 3.5 3 6.5 6 8M10 5c-.8 3.8-3.5 6.8-7 8.2"/><path d="M13 21l4-9 4 9M14.4 18h5.2"/></svg><span>TH</span></button>`;
 
-  // ---------- คำอธิบายสำหรับโพสต์ (ใช้ทั้งหน้าสร้างและหน้าผลงาน) — เลือกภาษา ไทย / English / ไทย+English ----------
+  // ---------- คำอธิบายสำหรับโพสต์ (ใช้ทั้งหน้าสร้างและหน้าผลงาน) ----------
+  // เลือกภาษา ไทย / English / ไทย+English · เก็บประวัติทุกเวอร์ชัน (AI เขียน + แก้ไขเอง) ให้กลับมาเลือกได้
   const caption = (() => {
     const modal = $("#captionModal");
     if (!modal) return null;
     const LANG_KEY = "vg:capLang";
-    let bodyFn = null, lang = store.get(LANG_KEY, "th"), cache = {}, seq = 0;
+    const LANG_LABEL = { th: "ไทย", en: "English", both: "ไทย + EN" };
+    let bodyFn = null, lang = store.get(LANG_KEY, "th"), cache = {}, seq = 0, history = [], histLoaded = false, dirty = false;
     const langBtns = $$("#capLang button");
     const markLang = () => langBtns.forEach((b) => b.classList.toggle("active", b.dataset.value === lang));
-    const fill = (d) => { $("#capTitle").value = d.title || ""; $("#capDesc").value = d.description || ""; $("#capTags").value = (d.hashtags || []).join(" "); };
-    const busy = (on) => { $("#capLoading").hidden = !on; $("#capBody").hidden = on; $("#capRegen").disabled = on; };
-    // เก็บสิ่งที่ผู้ใช้แก้ไว้ในภาษานั้น ก่อนสลับไปภาษาอื่น
-    const keepEdits = () => {
-      if (!$("#capBody").hidden && cache[lang]) cache[lang] = { ...cache[lang], title: $("#capTitle").value, description: $("#capDesc").value, hashtags: $("#capTags").value.split(/\s+/).filter(Boolean) };
+    const scope = () => { const b = bodyFn ? bodyFn() : {}; return { project_id: b.project_id || null, idea: b.idea || "" }; };
+    const tagsOf = () => $("#capTags").value.split(/\s+/).filter(Boolean);
+    function meta(d) {
+      const el = $("#capMeta");
+      if (!d || !d.created_at) { el.textContent = ""; return; }
+      el.textContent = `${d.source === "edited" ? "✎ แก้ไขเอง" : "✨ AI เขียน"} · ${d.created_at}` + (dirty ? " · มีการแก้ไขที่ยังไม่บันทึก" : "");
+    }
+    const fill = (d) => { $("#capTitle").value = d.title || ""; $("#capDesc").value = d.description || ""; $("#capTags").value = (d.hashtags || []).join(" "); dirty = false; meta(d); };
+    const busy = (on) => {
+      const hist = !$("#capHist").hidden;  // เปิดดูประวัติอยู่ = ไม่ต้องโชว์ฟอร์ม
+      $("#capLoading").hidden = !on || hist; $("#capBody").hidden = on || hist; $("#capRegen").disabled = on; $("#capSave").disabled = on;
     };
+    // เก็บสิ่งที่ผู้ใช้แก้ไว้ในภาษานั้น ก่อนสลับไปภาษาอื่น (ยังไม่บันทึกลงประวัติจนกว่าจะกด "บันทึกเวอร์ชันนี้")
+    const keepEdits = () => {
+      if (dirty && cache[lang]) cache[lang] = { ...cache[lang], title: $("#capTitle").value, description: $("#capDesc").value, hashtags: tagsOf(), _dirty: true };
+    };
+    ["#capTitle", "#capDesc", "#capTags"].forEach((id) => $(id).addEventListener("input", () => { if (!dirty) { dirty = true; meta(cache[lang]); } }));
+
+    // ---- ประวัติ ----
+    function setCount() { $("#capHistCount").textContent = history.length; }
+    function addHistory(item) { history = [item, ...history.filter((h) => h.id !== item.id)]; setCount(); if (!$("#capHist").hidden) renderHistory(); }
+    async function loadHistory() {
+      const sc = scope();
+      try {
+        const r = await fetch(VG.captionsUrl + (sc.project_id ? `?project=${sc.project_id}` : ""), { credentials: "same-origin" }).then((x) => x.json());
+        if (r.ok) { history = r.items || []; histLoaded = true; setCount(); if (!$("#capHist").hidden) renderHistory(); }
+      } catch (_) {}
+    }
+    function renderHistory() {
+      const box = $("#capHistList");
+      if (!histLoaded) { box.innerHTML = '<div class="muted small cap-hist-empty"><span class="spinner"></span> กำลังโหลด…</div>'; return; }
+      if (!history.length) { box.innerHTML = '<div class="muted small cap-hist-empty">ยังไม่มีประวัติ — ทุกครั้งที่ AI เขียน หรือกด "บันทึกเวอร์ชันนี้" จะถูกเก็บไว้ที่นี่</div>'; return; }
+      const cur = cache[lang] && cache[lang].id;
+      box.innerHTML = history.map((h) => `
+        <div class="cap-item${h.id === cur ? " current" : ""}" data-id="${h.id}" role="button" tabindex="0">
+          <div class="cap-item-top">
+            <span class="cap-badge lang-${esc(h.lang)}">${esc(LANG_LABEL[h.lang] || h.lang)}</span>
+            <span class="cap-badge src-${esc(h.source)}">${h.source === "edited" ? "✎ แก้ไขเอง" : "✨ AI"}</span>
+            <span class="muted small">${esc(h.created_at)}</span>
+            ${h.id === cur ? '<span class="cap-cur">กำลังแสดง</span>' : ""}
+            <button type="button" class="cap-del" data-del="${h.id}" title="ลบเวอร์ชันนี้" aria-label="ลบ">×</button>
+          </div>
+          <div class="cap-item-title">${esc(h.title || "(ไม่มีชื่อ)")}</div>
+          <div class="cap-item-desc">${esc((h.description || "").replace(/\s+/g, " ").trim())}</div>
+          ${!scope().project_id && h.idea ? `<div class="cap-item-idea muted small">ไอเดีย: ${esc(h.idea)}</div>` : ""}
+        </div>`).join("");
+    }
+    function showHistory(on) {
+      $("#capHist").hidden = !on; $("#capHistBtn").setAttribute("aria-expanded", on ? "true" : "false");
+      $("#capHistBtn").classList.toggle("on", on);
+      if (on) { $("#capBody").hidden = true; $("#capLoading").hidden = true; $("#capActions").hidden = true; renderHistory(); if (!histLoaded) loadHistory(); }
+      else { $("#capActions").hidden = false; busy($("#capLoading").dataset.busy === "1"); }
+    }
+    function useItem(h) {
+      keepEdits();
+      lang = h.lang in LANG_LABEL ? h.lang : "th"; store.set(LANG_KEY, lang); markLang();
+      cache[lang] = h; seq++; $("#capLoading").dataset.busy = "0"; busy(false); fill(h); showHistory(false);
+    }
+    $("#capHistBtn").addEventListener("click", () => { keepEdits(); showHistory($("#capHist").hidden); });
+    $("#capHistBack").addEventListener("click", () => showHistory(false));
+    $("#capHistList").addEventListener("click", async (e) => {
+      const del = e.target.closest("[data-del]");
+      if (del) {
+        e.stopPropagation();
+        if (!confirm("ลบคำอธิบายเวอร์ชันนี้ออกจากประวัติ?")) return;
+        const id = Number(del.dataset.del);
+        const r = await postJSON(`${VG.captionBase}${id}/delete/`, {});
+        if (!r.ok) return toast(r.error || "ลบไม่สำเร็จ", "error");
+        history = history.filter((h) => h.id !== id); setCount();
+        Object.keys(cache).forEach((k) => { if (cache[k] && cache[k].id === id) cache[k] = { ...cache[k], id: null }; });
+        return renderHistory();
+      }
+      const it = e.target.closest(".cap-item");
+      if (it) { const h = history.find((x) => x.id === Number(it.dataset.id)); if (h) useItem(h); }
+    });
+    $("#capHistList").addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.classList.contains("cap-item")) e.target.click(); });
+
+    // ---- เขียน / บันทึก ----
     async function generate() {
       const my = ++seq, want = lang;
-      busy(true);
+      $("#capLoading").dataset.busy = "1"; busy(true);
       const r = await postJSON(VG.assistDescUrl, { action: "caption", caption_lang: want, ...bodyFn() });
-      if (my !== seq) return;  // ผู้ใช้สลับภาษาระหว่างรอ
-      busy(false);
+      if (my !== seq) return;  // ผู้ใช้สลับภาษา / เลือกจากประวัติระหว่างรอ
+      $("#capLoading").dataset.busy = "0"; busy(false);
       if (!r.ok) { toast(r.error || "AI เขียนคำอธิบายไม่สำเร็จ", "error"); if (cache[want]) fill(cache[want]); return; }
       cache[want] = r; fill(r);
+      if (r.id) addHistory(r);
     }
-    function showLang() { markLang(); if (cache[lang] && cache[lang].description) { seq++; busy(false); fill(cache[lang]); } else generate(); }
+    $("#capSave").addEventListener("click", async (e) => {
+      const btn = e.currentTarget, sc = scope();
+      btn.disabled = true;
+      const r = await postJSON(VG.captionSaveUrl, { ...sc, lang, title: $("#capTitle").value, description: $("#capDesc").value, hashtags: tagsOf() });
+      btn.disabled = false;
+      if (!r.ok) return toast(r.error || "บันทึกไม่สำเร็จ", "error");
+      cache[lang] = r; dirty = false; meta(r); addHistory(r);
+      toast("บันทึกเวอร์ชันนี้ไว้ในประวัติแล้ว");
+    });
+    function showLang() {
+      markLang();
+      const c = cache[lang];
+      if (c && c.description) { seq++; $("#capLoading").dataset.busy = "0"; busy(false); fill(c); if (c._dirty) { dirty = true; meta(c); } }
+      else generate();
+    }
     langBtns.forEach((b) => b.addEventListener("click", () => {
-      if (b.dataset.value === lang) return;
-      keepEdits(); lang = b.dataset.value; store.set(LANG_KEY, lang); showLang();
+      if (b.dataset.value === lang && $("#capHist").hidden) return;
+      keepEdits(); lang = b.dataset.value; store.set(LANG_KEY, lang);
+      if (!$("#capHist").hidden) showHistory(false);
+      showLang();
     }));
     const copy = (text, btn) => {
       const done = () => { if (btn) { const t = btn.textContent; btn.textContent = "คัดลอกแล้ว ✓"; setTimeout(() => (btn.textContent = t), 1300); } };
@@ -143,11 +234,13 @@
     $("#capCopyAll").addEventListener("click", (e) => copy(`${$("#capTitle").value}\n\n${$("#capDesc").value}\n\n${$("#capTags").value}`, e.currentTarget));
     $("#capRegen").addEventListener("click", generate);
     return {
-      // saved = คำอธิบายที่บันทึกไว้ {th: {...}, en: {...}} (หน้าผลงาน) — หน้าสร้างเปิดใหม่ทุกครั้ง
+      // saved = คำอธิบายล่าสุดของแต่ละภาษา {th: {...}, en: {...}} (หน้าผลงาน) · หน้าสร้างให้ AI เขียนใหม่ทุกครั้งที่เปิด
       open(fn, saved) {
         bodyFn = fn; modal.classList.add("open");
         if (saved !== undefined) cache = Object.assign({}, saved || {}, cache);
         else cache = {};
+        histLoaded = false; history = []; setCount(); showHistory(false);
+        loadHistory();
         showLang();
       },
     };

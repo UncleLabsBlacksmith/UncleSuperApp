@@ -27,6 +27,11 @@ SECRET_KEY = _load_secret_key()
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",")
 CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o]
+# ที่อยู่เว็บที่ผู้ใช้คนอื่นเข้าถึงได้ ใช้ในลิงก์รีเซ็ตรหัสผ่าน เช่น http://192.168.1.20:8000 หรือ https://app.example.com
+# (เว้นว่าง = ใช้ที่อยู่ที่แอดมินเปิดหน้าจัดการผู้ใช้อยู่)
+SITE_URL = os.environ.get("SITE_URL", "").rstrip("/")
+# อายุของลิงก์รีเซ็ตรหัสผ่านที่แอดมินสร้าง (ชั่วโมง)
+PASSWORD_RESET_LINK_HOURS = int(os.environ.get("PASSWORD_RESET_LINK_HOURS", "72"))
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -66,6 +71,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "videogen.context.video_jobs",
+                "accounts.context.admin_badges",
             ],
         },
     },
